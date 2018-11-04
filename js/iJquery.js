@@ -20,6 +20,11 @@
         css:function(){console.log("修改样式")},
         pushStack:function(){console.log("constructor--",this.constructor());}
     };
-    carrier.prototype.init.prototype=carrier.prototype;//原型链共享//这样new init时，实例原型将指向carrier原型。
+    //carrier.prototype.init.prototype=carrier.prototype;//原型链共享//这样new init时，实例原型将指向carrier原型。
+    carrier.fn=carrier.prototype.init.prototype=carrier.prototype;//原型链共享
+    //JQ挂载extend方法
+    carrier.fn.extend=carrier.extend=function(){
+        console.log(this);
+    };
     root[name]=root.carrier=carrier;//别名
 },"$");
