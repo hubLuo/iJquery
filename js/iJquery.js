@@ -7,6 +7,11 @@
 ~function(root,factory,name){
     factory(root,name);
 }(this,function(root,name){
+    /*注意
+     * carrier.prototype.init;只是表示了一个引用，实质上就是个函数地址，这个地址指向了函数所在内存位置。
+     * carrier.prototype.init();表达了2个操作：1.执行carrier.prototype.init所指向地址的函数;2.指明了函数的执行环境为carrier.prototype。
+     * 简单的来说，就是在carrier.prototype环境下找到init函数，并执行它。
+     * */
     var carrier=function(){ //封装构造函数
         return new carrier.prototype.init();//创建carrier实例
     };
@@ -33,10 +38,23 @@
         var length=arguments.length,i= 1,target=arguments[0]||{},
             option,//具体的src
             name;//src对象名
+        //深拷贝
+        var deep=false,//判断拷贝类型
+            copy,//记录option[name]，判断类型；
+            src,//记录target[name],判断类型；
+            copyIsArray,//记录当copy为数组时；
+            clone;//目标值的备份；
+
+        if(typeof target=="boolean"){
+            deep=target;
+            target=arguments[1];
+            i=2;
+        }
 
         if(typeof target!=="object"){
             target={};
         }
+
         //需求1
         if (length ==i){
             target=this;//把this变为目标元素
@@ -46,11 +64,38 @@
         for(;i<length;i++){
             if((option=arguments[i])!==null){
                 for(name in option ){
-                    target[name]=option[name];
+                    src=target[name];
+                    copy= option[name];
+                    if(deep && (carrier.isPlainObject(copy) || (copyIsArray=carrier.isArray(copy)))){
+                        if(copyIsArray){
+                            //true被拷贝的值为数组
+                            copyIsArray=false;
+                            clone = src && carrier.isArray(src) ? src : [];
+                        }else{
+                            //被拷贝的值为对象
+                            clone = src && carrier.isPlainObject(src) ? src : {};
+                        }
+                        //深拷贝
+                        target[name] = carrier.extend( deep, clone, copy  );
+                    }else if(copy !==undefined){
+                        //浅拷贝
+                        //target[name]=option[name];
+                        target[name]=copy;
+                    }
                 }
             };
-        }
+        };
         return target;
     };
+    carrier.extend({
+        //类型检查
+        isPlainObject: function( obj ){
+            return typeof obj === "object";
+        },
+
+        isArray: function(obj){   //array对象
+            return toString.call(obj) === "[object Array]";
+        }
+    });
     root[name]=root.carrier=carrier;//别名
 },"$");

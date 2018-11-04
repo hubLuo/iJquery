@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JQ的架构测试</title>
+</head>
+<body>
+<script src="./js/iJquery.js"></script>
+<script>
+    /*
+    * 使用new 自定义构造函数来创建一个实例的时候，经历了以下4个步骤（做了4件事情）
+    * 1.创建一个Object对象，即一个新实例对象。
+    * 2.给第一步创建出的Object对象，构建原型链的关系即给__proto__属性赋值。这个值就是自定义构造函数的原型对象。
+    * 3.自定义构造函数绑定Object对象为执行环境，并执行里面代码。
+    * 4.最后返回一个对象：执行结果不为对象或没有返回，那么返回的就是该Object，如有执行结果为对象，那么就是执行结果。
+    * */
+    //1.上述步骤就是new的一个模拟实现
+    function iNew() {
+        //第一步：创建一个Object对象，即一个新实例对象。
+        var obj = new Object(), Constructor = [].shift.call(arguments);
+        //第二步：给Object对象建立原型链关系
+        obj.__proto__ = Constructor.prototype;
+        //第三步：自定义构造函数绑定Object对象为执行环境，并执行里面代码，最后返回一个对象。
+        var ret = Constructor.apply(obj, arguments);
+        //第四步：最后返回一个对象：执行结果不为对象或没有返回，那么返回的就是该Object，如有执行结果为对象，那么就是执行结果。
+        return typeof ret === 'object' ? ret : obj;
+    };
+
+    //具体例子：
+    function Person(){}
+    Person.prototype={}//原型对象
+    var lq=new Person();
+    console.log(lq.__proto__===Person.prototype);
+
+    //2.JQ的整体架子搭建的需求：1.$别名；2.封装实例化操作（语法糖封装）$();
+    console.log($);
+    console.log($());
+    $().css();
+
+    //3.函数执行的环境
+    var name="window";
+    var cxt={
+        name:"cxt",
+        fn:function(){console.log("fn中的this",this.name)}
+    }
+    var exc=cxt.fn;
+    cxt.fn();//cxt;
+    exc();//window;
+    /*
+    * 首先要理解函数赋值：var exc=cxt.fn;
+    * cxt.fn只是表示了一个引用，实质上就是个函数地址，这个地址指向了函数所在内存位置。
+    * 也就是说var exc=cxt.fn;实际含义为把这个引用地址赋值给全局变量exc,也就是window.exc;
+    *
+    * 其次要理解函数执行：cxt.fn()
+    * 它有两层含义，第一fn()：表示执行这个函数，第二cxt.：表示了函数执行的所在环境
+    * 也就是说cxt.fn();实际上就是在cxt对象下找到fn,并执行它。
+    * 而exc();由于先前已经存储了函数地址，因此在此就是在window对象下找到exc,并执行它。
+    *
+    * */
+
+    //4extend的执行环境
+    $.extend();
+    $.fn.extend();
+    $().extend();
+
+    //5extend浅拷贝
+    //jQuery本身扩展
+    $.extend({
+        work:function(){
+            console.log("老司机带带我")
+        }
+    });
+    $.work()
+
+    //深拷贝
+    var obj = {name:"max" , list:{work:function(){}} }
+    var result = {age: "30", sex:"男", list:{css1:function(){}}}
+    //任意对象扩展
+    $.extend( true, obj, result );    //参数1 扩展的对象  参数2 遍历
+    console.log(obj)
+
+    //6测试实例的构造函数
+    $().pushStack();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
