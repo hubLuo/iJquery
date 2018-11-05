@@ -120,7 +120,29 @@
             var match;
             if(!selector){return this;}
             if(typeof selector==="string"){
+                this.length=0;
+                //1-2处理字符串情况：分辨字符串：#xx,.xx,html字符串
+                if(selector.charAt(0) ==="<" && selector.charAt(selector.length-1)===">" && selector.length>=3){
+                    //html字符串
+                    match=[null,selector,null];
+                }else{
+                    match=htmlIdExp.exec(selector);//因为此处只能是#开头字符串，html标签已经截取完毕。
+                }
 
+                if(match[1]){
+                    //1处理HTML标签字符串：创建DOM+存储
+                    carrier.merge(this,carrier.parseHTML(selector,context&&context.nodeType?context:document));
+                }else{
+                    //2处理#字符串：查询+存储
+                    var elem=document.getElementById(match[2]);
+                    if(elem,elem.nodeType){
+                        this.length=1;
+                        this[0]=elem;
+                    }
+                    this.context=context || document;
+                    this.selector=selector;
+                    return this;
+                }
             }else if(selector.nodeType){
                 //3处理element对象情况
                 this.context=this[0]=selector;
