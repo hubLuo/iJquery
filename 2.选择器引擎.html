@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>选择器引擎</title>
+</head>
+<body>
+
+</body>
+<script src="./js/iJquery.js"></script>
+<script>
+    //1.泛数组合并
+    console.log($.merge({0:"lq",length:1},["mei","li","tianshi"]));
+    console.log($.merge({0:"lq",length:1},{0:"mei",1:"li",2:"tianshi",length:3}));
+    console.log($.merge(["lq"],["mei","li","tianshi"]));
+    console.log($.merge(["lq"],{0:"mei",1:"li",2:"tianshi",length:3}));
+</script>
+</html>

@@ -16,13 +16,13 @@
     * */
     //1.上述步骤就是new的一个模拟实现
     function iNew() {
-        //第一步：创建一个Object对象，即一个新实例对象。
+        //第一步：创建一个新Object实例对象。
         var obj = new Object(), Constructor = [].shift.call(arguments);
-        //第二步：给Object对象建立原型链关系
+        //第二步：重新指定实例原型为构造函数原型。
         obj.__proto__ = Constructor.prototype;
-        //第三步：自定义构造函数绑定Object对象为执行环境，并执行里面代码，最后返回一个对象。
+        //第三步：在obj上下文中执行构造方法。
         var ret = Constructor.apply(obj, arguments);
-        //第四步：最后返回一个对象：执行结果不为对象或没有返回，那么返回的就是该Object，如有执行结果为对象，那么就是执行结果。
+        //第四步：判断构造方法执行结果：结果不为对象或没有返回，那么返回的就是该obj，如有执行结果为对象，那么就是执行结果。
         return typeof ret === 'object' ? ret : obj;
     };
 
@@ -80,7 +80,7 @@
     console.log(obj)
 
     //6测试实例的构造函数
-    $().pushStack();
+    $("ok").pushStack();
 </script>
 </body>
 </html>

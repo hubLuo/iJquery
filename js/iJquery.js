@@ -4,6 +4,10 @@
  *Email：hubluo@gmail.com
  *功能：
  */
+
+/*
+* 架构
+* */
 ~function(root,factory,name){
     factory(root,name);
 }(this,function(root,name){
@@ -12,18 +16,16 @@
      * carrier.prototype.init();表达了2个操作：1.执行carrier.prototype.init所指向地址的函数;2.指明了函数的执行环境为carrier.prototype。
      * 简单的来说，就是在carrier.prototype环境下找到init函数，并执行它。
      * */
-    var carrier=function(){ //封装构造函数
-        return new carrier.prototype.init();//创建carrier实例
+    var carrier=function(selector){ //封装构造函数
+        return new carrier.prototype.init(selector);//创建carrier实例
     };
     carrier.prototype={//carrier原型
         constructor:carrier,
-            init:function(){
-            this[0]="LQ";
-            this[1]="is good";
-            return this;
+        init:function(selector){
+            return this.selector(selector);
         },
         css:function(){console.log("修改样式")},
-        pushStack:function(){console.log("constructor--",this.constructor());}
+        pushStack:function(){console.log("constructor--",this.constructor()==this,this,this.constructor());}
     };
     //carrier.prototype.init.prototype=carrier.prototype;//原型链共享//这样new init时，实例原型将指向carrier原型。
     carrier.fn=carrier.prototype.init.prototype=carrier.prototype;//原型链共享
@@ -102,15 +104,78 @@
         };
         return target;
     };
-    carrier.extend({
-        //类型检查
-        isPlainObject: function( obj ){
-            return typeof obj === "object";
-        },
-
-        isArray: function(obj){   //array对象
-            return toString.call(obj) === "[object Array]";
-        }
-    });
     root[name]=root.carrier=carrier;//别名
 },"$");
+
+/*
+* 选择器引擎
+* */
+~function($){
+    var carrier=$;
+    //选择器
+    $.fn.extend({
+        selector:function(selector){
+            if(selector){
+                this[0]="dada";
+                this[1]="bbaa";
+            }
+            return this;
+        }
+    });
+
+    //核心方法泛数组合并
+    $.extend({
+        merge:function(target,src){
+            var i=target.length || 0,l=src.length,j=0;
+            if(carrier.isArray(src)){
+                for(;j<l;j++){
+                    target[i++]=src[j];
+                }
+            }else{
+                while(src[j]!==undefined){
+                    target[i++]=src[j++];
+                }
+            }
+            target.length=i;
+            return target;
+        },
+        markArray:function(arr){
+            var result=[];
+            if(arr &&arr.length>0){
+                return carrier.merge(result,arr);
+            }
+        }
+    });
+}($);
+
+//类型检查
+$.extend({
+    type:function(){},
+    isPlainObject: function( obj ){
+        return typeof obj === "object";
+    },
+    isArray: function(obj){   //array对象
+        return Object.prototype.toString.call(obj) === "[object Array]";
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
