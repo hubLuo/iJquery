@@ -16,13 +16,13 @@
      * carrier.prototype.init();表达了2个操作：1.执行carrier.prototype.init所指向地址的函数;2.指明了函数的执行环境为carrier.prototype。
      * 简单的来说，就是在carrier.prototype环境下找到init函数，并执行它。
      * */
-    var carrier=function(selector){ //封装构造函数
-        return new carrier.prototype.init(selector);//创建carrier实例
+    var carrier=function(selector,context){ //封装构造函数
+        return new carrier.prototype.init(selector,context);//创建carrier实例
     };
     carrier.prototype={//carrier原型
         constructor:carrier,
-        init:function(selector){
-            return this.selector(selector);
+        init:function(selector,context){
+            return this.selector(selector,context);
         },
         css:function(){console.log("修改样式")},
         pushStack:function(){console.log("constructor--",this.constructor()==this,this,this.constructor());}
@@ -111,15 +111,25 @@
 * 选择器引擎
 * */
 ~function($){
-    var carrier=$;
-    //选择器
+    var carrier= $,htmlIdExp= /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,//判断html标签和#id
+        rejectExp = /^<(\w+)\s*\/?>$/;  //"<(div)>"过滤掉<>
     $.fn.extend({
-        selector:function(selector){
-            if(selector){
-                this[0]="dada";
-                this[1]="bbaa";
+        //length:0,
+        //选择器
+        selector:function(selector,context){
+            var match;
+            if(!selector){return this;}
+            if(typeof selector==="string"){
+
+            }else if(selector.nodeType){
+                //3处理element对象情况
+                this.context=this[0]=selector;
+                this.length=1;
+                return this;
+            }else if(carrier.isFunction(selector)){
+                //4处理函数情况
             }
-            return this;
+            //return this;
         }
     });
 
@@ -144,6 +154,15 @@
             if(arr &&arr.length>0){
                 return carrier.merge(result,arr);
             }
+        },
+        parseHTML:function(data,context){
+            //创建DOM
+            if(!data || typeof data!=="string"){
+                return null;
+            }
+            //过滤掉<>
+            var parse=rejectExp.exec(data);
+            return [context.createElement(parse[1])];
         }
     });
 }($);
@@ -156,6 +175,9 @@ $.extend({
     },
     isArray: function(obj){   //array对象
         return Object.prototype.toString.call(obj) === "[object Array]";
+    },
+    isFunction:function(){
+        return Object.prototype.toString.call(obj) === "[object Function]";
     }
 });
 
