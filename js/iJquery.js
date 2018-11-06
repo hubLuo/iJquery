@@ -113,14 +113,15 @@
 ~function($){
     var carrier= $,htmlIdExp= /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,//判断html标签和#id
         rejectExp = /^<(\w+)\s*\/?>/;  //"<(div)>"过滤掉<>//去除$这样才能匹配<div></div>形式的<>;
+    //为了减少模块依赖，不用静态方法isFunction,isArray;
+    var toString=Object.prototype.toString,strFn="[object Function]",strArr="[object Array]";
     $.fn.extend({
         //length:0,
         //选择器
         selector:function(selector,context){
-            var match;
             if(!selector){return this;}
             if(typeof selector==="string"){
-                this.length=0;
+                this.length=0;var match;
                 //1-2处理字符串情况：分辨字符串：#xx,.xx,html字符串
                 if(selector.charAt(0) ==="<" && selector.charAt(selector.length-1)===">" && selector.length>=3){
                     //html字符串
@@ -134,6 +135,12 @@
                     carrier.merge(this,carrier.parseHTML(selector,context&&context.nodeType?context:document));
                 }else{
                     //2处理#字符串：查询+存储
+                    if(!match[2]){
+                        //3.进行class和标签名查询
+                        //carrier.find(selector,context);
+                        //return this
+                    }
+                    // 查询#字符串：
                     var elem=document.getElementById(match[2]);
                     if(elem,elem.nodeType){
                         this.length=1;
@@ -148,18 +155,25 @@
                 this.context=this[0]=selector;
                 this.length=1;
                 return this;
-            }else if(carrier.isFunction(selector)){
+            }else if(toString.call(selector)===strFn){
                 //4处理函数情况
+                carrier.rootInstance.ready(selector);
             }
             //return this;
+        },
+        ready:function(fn){
+            //监听DOM事件
+            document.addEventListener("DOMContentLoaded",carrier.ready);
+            //DOM加载完成：直接执行；DOM没有加载完：加入执行队列
+            carrier.isReady?fn.call(document,carrier):carrier.readyList.push(fn);
         }
     });
-
-    //核心方法泛数组合并
+    //核心静态方法
     $.extend({
+        //核心方法泛数组合并
         merge:function(target,src){
             var i=target.length || 0,l=src.length,j=0;
-            if(carrier.isArray(src)){
+            if(toString.call(src)===strArr){
                 for(;j<l;j++){
                     target[i++]=src[j];
                 }
@@ -235,6 +249,18 @@
                     callback.apply(obj[i],arr(i,obj[i]));
                 }
             }
+        },
+        rootInstance:carrier(document),//1.根实例
+        readyList:[],//2.事件队列
+        isReady:false,
+        ready:function(){
+            //依次执行事件队列中的函数。
+            carrier.isReady=true;
+            carrier.each(carrier.readyList,function(i,fn){
+                //是数组，所以方法绑定在数组中的元素，所以this===fn的。
+                this.call(document,carrier);
+            });
+            carrier.readyList=null;//执行完清空。
         }
     });
 }($);
