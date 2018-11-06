@@ -163,7 +163,11 @@
         },
         ready:function(fn){
             //监听DOM事件
-            document.addEventListener("DOMContentLoaded",carrier.ready);
+            //document.addEventListener("DOMContentLoaded",carrier.ready);
+            if(!carrier.isAddDOMContentLoaded){
+                carrier.isAddDOMContentLoaded=true;
+                carrier.handleDOMContentLoaded(carrier.ready);
+            }
             //DOM加载完成：直接执行；DOM没有加载完：加入执行队列
             carrier.isReady?fn.call(document,carrier):carrier.readyList.push(fn);
         }
@@ -261,6 +265,44 @@
                 this.call(document,carrier);
             });
             carrier.readyList=null;//执行完清空。
+        },
+        isAddDOMContentLoaded:false,
+        handleDOMContentLoaded:function(fn){
+            var ready = false,
+                top = false,
+                doc = window.document,
+                root = doc.documentElement,
+                modern = doc.addEventListener,
+                add = modern ? 'addEventListener' : 'attachEvent',
+                del = modern ? 'removeEventListener' : 'detachEvent',
+                pre = modern ? '' : 'on',
+                init = function(e) {
+                    if (e.type === 'readystatechange' && doc.readyState !== 'complete') return;
+                    (e.type === 'load' ? window : doc)[del](pre + e.type, init, false);
+                    if (!ready && (ready = true)) fn.call(window, e.type || e);
+                },
+                poll = function() {
+                    try {
+                        root.doScroll('left');
+                    } catch(e) {
+                        setTimeout(poll, 50);
+                        return;
+                    }
+                    init('poll');
+                };
+
+            if (doc.readyState === 'complete') fn.call(window, 'lazy');
+            else {
+                if (!modern && root.doScroll) {
+                    try {
+                        top = !window.frameElement;
+                    } catch(e) {}
+                    if (top) poll();
+                }
+                doc[add](pre + 'DOMContentLoaded', init, false);
+                doc[add](pre + 'readystatechange', init, false);
+                window[add](pre + 'load', init, false);
+            }
         }
     });
 }($);
