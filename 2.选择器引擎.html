@@ -14,5 +14,52 @@
     console.log($.merge({0:"lq",length:1},{0:"mei",1:"li",2:"tianshi",length:3}));
     console.log($.merge(["lq"],["mei","li","tianshi"]));
     console.log($.merge(["lq"],{0:"mei",1:"li",2:"tianshi",length:3}));
+
+    //each方法
+    var obj={name:"lq",sex:"man"};
+    var arr=[1,2,3];
+    $.each(obj,function(key,value){
+        console.log(this,key,value);
+    });
+    $.each(obj,function(arr1,arr2,arr3){
+        console.log(this,arr1,arr2,arr3);
+    },arr);
 </script>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

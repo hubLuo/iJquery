@@ -22,7 +22,7 @@
     carrier.prototype={//carrier原型
         constructor:carrier,
         init:function(selector,context){
-            return this.selector(selector,context);
+            return this.selector(selector,context);//等同carrier.prototype.selector(selector,context).call(this);
         },
         css:function(){console.log("修改样式")},
         pushStack:function(){console.log("constructor--",this.constructor()==this,this,this.constructor());}
@@ -112,7 +112,7 @@
 * */
 ~function($){
     var carrier= $,htmlIdExp= /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,//判断html标签和#id
-        rejectExp = /^<(\w+)\s*\/?>$/;  //"<(div)>"过滤掉<>
+        rejectExp = /^<(\w+)\s*\/?>/;  //"<(div)>"过滤掉<>//去除$这样才能匹配<div></div>形式的<>;
     $.fn.extend({
         //length:0,
         //选择器
@@ -185,6 +185,56 @@
             //过滤掉<>
             var parse=rejectExp.exec(data);
             return [context.createElement(parse[1])];
+        },
+        each:function(obj,callback,args){
+            /*
+             * each设计：遍历对象分为泛数组和对象
+             * 1.length区分出泛数组和其他对象
+             * 2.遍历方式不统一使用in的形式是考虑到类数组中非数字下标属性也会被读取。
+             * 所以泛数组采用下标循环，对象采用in循环。
+             * 3.参数：obj遍历的对象，callback遍历时回调，args自定义回调函数参数；
+             * 4.遍历时回调函数绑定对象规则：泛数组时绑定遍历值，其他对象时绑定该对象。
+             * 5.遍历时回调函数参数传递规则：有args时，传递args,否则传递遍历的数据。
+             * */
+            /*
+            //第一版：
+            var length=obj.length;
+            if(args){
+                //使用自定义callback参数
+                if(length===undefined){
+                    for(var name in obj){
+                        callback.apply(obj,args);
+                    }
+                }else{
+                    for(var i=0;i<length;i++){
+                        callback.apply(obj[i],args);
+                    }
+                }
+            }else{
+                if(length===undefined){
+                    for(var name in obj){
+                        callback.call(obj,name,obj[name]);
+                    }
+                }else{
+                    for(var i=0;i<length;i++){
+                        callback.call(obj[i],i,obj[i]);
+                    }
+                }
+            }*/
+            //第二版：
+            var length=obj.length,arr=function(){return args};
+            if(!arr()){
+                arr=function(index,value){return [index,value];}
+            }
+            if(length===undefined){
+                for(var name in obj){
+                    callback.apply(obj,arr(name,obj[name]));
+                }
+            }else{
+                for(var i=0;i<length;i++){
+                    callback.apply(obj[i],arr(i,obj[i]));
+                }
+            }
         }
     });
 }($);
@@ -194,6 +244,9 @@ $.extend({
     type:function(){},
     isPlainObject: function( obj ){
         return typeof obj === "object";
+    },
+    isObject: function( obj ){
+        return Object.prototype.toString.call(obj) === "[object Object]";
     },
     isArray: function(obj){   //array对象
         return Object.prototype.toString.call(obj) === "[object Array]";
