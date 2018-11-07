@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>jq的access用户行为判断</title>
+    <style>
+        #box{
+            width: 100px;
+            height: 100px;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+<div id="box" style="color:#fff">老司机开车了</div>
+<script type="text/javascript" src="./js/iJquery.js"></script>
+<script type="text/javascript">
+    //    获取行内样式   外部样式？   getComputedStyle
+    // console.log(document.getElementById("box").style.width);
+    //查询DOM  增删查改   css样式
+    //console.log($("#box"))
+
+    // 用最少的代码  做最多的事情。   修改你的样式
+    console.log($("#box").css("background","red"));    //参数是2      重置改变元素的样式
+    //console.log($("#box").css("width"))   //参数是1    获取（返回）当前元素的值
+    /*
+     * edit by wolfe
+     * css ，text链式调用
+     * */
+    $("#box").css({           //参数是1    并且参数是一个对象    重置改变元素的样式
+        "background":"yellow",
+        "color": "#fff",
+        "font-size":"12px",
+        "width":"200px"
+
+    }).css("background","blue");
+
+    //获取text
+    console.log("原文本：",$("#box").text());
+    //设置text
+    console.log("新文本：",$("#box").text("hello wolfe!").text());
+
+    //通过参数  判断用户的行为（你要做什么）
+
+
+</script>
+</body>
+</html>

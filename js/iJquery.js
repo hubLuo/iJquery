@@ -242,7 +242,7 @@
                     }
                 }
             }*/
-            //第二版：
+           /* //第二版：去除重复循环
             var length=obj.length,arr=function(){return args};
             if(!arr()){
                 arr=function(index,value){return [index,value];}
@@ -255,18 +255,29 @@
                 for(var i=0;i<length;i++){
                     callback.apply(obj[i],arr(i,obj[i]));
                 }
+            }*/
+            //第三版：加强参数传递，第2版中args传递时必须为数组。
+            var argsLen=arguments.length,length=obj.length,args=args;
+            if(argsLen==3){
+                args=Object.prototype.toString.call(args)=="[object Array]"?args:[args];
+            }else if(argsLen>3){
+                args=[].prototype.slice.call(arguments,2);
             }
-        },
-        //遍历实例对象，并执行操作。
-        eachForInstance:function(fn){
-            return function(){
-                carrier.each(this,function(){
-                    var arr=Array.prototype.slice(arguments);
-                    //arr.unshift(this);//注意unshift在IE下无效
-                    fn.apply(null,[this].concat(arr));//方式1设置元素为方法的第一个参数。
-                    //fn.apply(this,arguments);//方式2直接设置元素为方法的执行环境。
-                },Array.prototype.slice(arguments));
-            }.bind(this);
+
+            var arr=function(){return args};
+            if(!arr()){
+                arr=function(index,value){return [index,value];}
+            }
+            if(length===undefined){
+                for(var name in obj){
+                    callback.apply(obj,arr(name,obj[name]));
+                }
+            }else{
+                for(var i=0;i<length;i++){
+                    callback.apply(obj[i],arr(i,obj[i]));
+                }
+            }
+
         },
         rootInstance:carrier(document),//1.根实例
         readyList:[],//2.事件队列
@@ -333,11 +344,22 @@
 }($);
 
 /*
-* 4选择实例元素
+* 4遍历实例：选择/过滤实例元素
 * */
 ~function($){
     var carrier= $;
     carrier.fn.extend({
+        //遍历实例对象内容，并执行操作。
+        eachForInstance:function(fn){
+            return function(){
+                carrier.each(this,function(){
+                    var arr=Array.prototype.slice.call(arguments);
+                    //arr.unshift(this);//注意unshift在IE下无效
+                    fn.apply(this,[this].concat(arr));//方式1设置元素为方法的第一个参数。
+                    //fn.apply(this,arguments);//方式2直接设置元素为方法的执行环境。
+                },Array.prototype.slice.call(arguments));
+            }.bind(this);
+        },
         pushStack: function( elems ) {
             //理解Jquery的入栈，将已有的元素合并出一个新的空 $ 对象
             //之所以是空$对象，因为工厂式构造函数没有传递参数。
@@ -373,6 +395,130 @@
             return this.pushStack(arr);
         }
     });
+}($);
+
+/*
+* 5access中间件
+* 通过参数来判断用户行为
+* */
+~function($){
+    var carrier= $;
+
+    $.extend({
+        access:function(elems, key, value, fn ){
+            /*access的作用，就是通过参数将get,set行为从具体的功能函数中抽离出来。
+            参数：参数个数，参数类型来判断着用户将进行何种行为。*/
+            var length = elems.length;
+            var deep = true;
+            var name,len=arguments.length,fn=fn;
+            if(len==4){
+                //为key,value情况
+                //1.当对象作为set操作
+                if( typeof key === "object" ) {
+                    deep = false;
+                    //使用递归，最后按2方式set;
+                    for( name in key ) {
+                        $.access( elems, name, key[name], fn );
+                    }
+                }
+                //2.当字符串key,value作为set操作
+                if( value !== undefined ){
+                    deep = false;
+                    //elems jQuery实例对象
+                    fn.call(elems,null,key,value);
+                }
+            }else if(len==3){
+                //为value情况
+                fn=value;
+                if( key !== undefined ){
+                    deep = false;
+                    fn.call(elems,null,key);
+                }
+            }
+            return deep?(length?fn( elems[0], key ):undefined):elems;
+        }
+    });
+}($);
+
+/*
+* 6HTML的DOM操作
+* */
+~function($){
+    var carrier= $;
+
+    //dom样式css操作
+    ~function($){
+        $.fn.extend({
+            css:function(name,value){
+                return $.access(this,name,value,function(elem,name,value){
+                    /*根据参数来判断用户的行为
+                     this：jQuery实例对象；name：属性；value：属性的值
+                     callback：根据判断的结果来进行具体的执行
+                     */
+                    if( value === undefined ){
+                        //get 返回Elment某个css样式属性的值
+                        return $.getCss( elem, name );
+                    }
+                    // 重置Elment某个css样式属性的值
+                    this.eachForInstance($.setCss)(name,value);
+                   /* for(var i = 0; i<this.length; i++ ){
+                        $.setCss( this[i], name, value );
+                    }*/
+                });
+            }
+        });
+        $.extend({
+            getCss: function( elem, name ){
+                var CSSStyleDeclaration,result;
+                if( getComputedStyle ){
+                    var CSSStyleDeclaration = document.defaultView.getComputedStyle(elem, null);
+                    result = CSSStyleDeclaration.getPropertyValue( name );
+                }
+                return result;
+            },
+            setCss: function( elem , name, value, elems ){
+                if(value !== undefined ){
+                    elem.style[name] = value;
+                }
+                return elems;
+            }
+        });
+    }($);
+
+    //dom内容操作
+    ~function($){
+        $.fn.extend({
+            text: function( value ){
+                return $.access(this, value, function( elem, value ){
+                    if(value === undefined) {
+                        return $.getText( elem );
+                    }
+                    this.eachForInstance($.setText)([value]);
+                    /*for(var i = 0; i<this.length; i++ ){
+                        $.setText( this[i],value );
+                    }*/
+                });
+            },
+            html:function(){
+
+            }
+        });
+        $.extend({
+            getText:function(elem){
+                return elem.innerText;
+            },
+            setText:function(elem,value){
+                elem.innerText=value;
+            }
+        });
+    }($);
+
+    //dom元素操作：增删
+    ~function($){
+        $.fn.extend({
+            append:function(){}
+        });
+    }($);
 }($);
 
 
