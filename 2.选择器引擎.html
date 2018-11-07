@@ -5,7 +5,9 @@
     <title>选择器引擎</title>
 </head>
 <body>
-
+    <div class="cj">1</div>
+    <div class="cj">2</div>
+    <div class="cj">3</div>
 </body>
 <script src="./js/iJquery.js"></script>
 <script>
@@ -37,6 +39,13 @@
     $(function(){
         console.log(333)
     })
+
+    //4.查询class
+    var doms=$(".cj");
+   console.log(doms);
+
+    //5.选择实例元素
+    console.log("文本内容：",$(".cj").eq(1)[0].innerText);
 </script>
 </html>
 

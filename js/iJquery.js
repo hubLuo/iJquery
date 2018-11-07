@@ -6,7 +6,7 @@
  */
 
 /*
-* 架构
+* 1架构
 * */
 ~function(root,factory,name){
     factory(root,name);
@@ -108,7 +108,7 @@
 },"$");
 
 /*
-* 选择器引擎
+* 2选择器引擎
 * */
 ~function($){
     var carrier= $,htmlIdExp= /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,//判断html标签和#id
@@ -127,7 +127,7 @@
                     //html字符串
                     match=[null,selector,null];
                 }else{
-                    match=htmlIdExp.exec(selector);//因为此处只能是#开头字符串，html标签已经截取完毕。
+                    match=htmlIdExp.exec(selector)?htmlIdExp.exec(selector):[];//因为此处只能是#开头字符串，html标签已经截取完毕。
                 }
 
                 if(match[1]){
@@ -136,9 +136,12 @@
                 }else{
                     //2处理#字符串：查询+存储
                     if(!match[2]){
+
                         //3.进行class和标签名查询
-                        //carrier.find(selector,context);
-                        //return this
+                        var doms=carrier.querySelector(selector,context || document),len=doms.length;
+                        for(var i=0;i<len;i++){this[i]=doms[i];}
+                        this.length=len;
+                        return this
                     }
                     // 查询#字符串：
                     var elem=document.getElementById(match[2]);
@@ -254,6 +257,17 @@
                 }
             }
         },
+        //遍历实例对象，并执行操作。
+        eachForInstance:function(fn){
+            return function(){
+                carrier.each(this,function(){
+                    var arr=Array.prototype.slice(arguments);
+                    //arr.unshift(this);//注意unshift在IE下无效
+                    fn.apply(null,[this].concat(arr));//方式1设置元素为方法的第一个参数。
+                    //fn.apply(this,arguments);//方式2直接设置元素为方法的执行环境。
+                },Array.prototype.slice(arguments));
+            }.bind(this);
+        },
         rootInstance:carrier(document),//1.根实例
         readyList:[],//2.事件队列
         isReady:false,
@@ -306,6 +320,61 @@
         }
     });
 }($);
+/*
+* 3选择器
+* */
+~function($){
+    var carrier= $;
+    carrier.extend({
+        querySelector:function(selector,context){
+            return context.querySelectorAll(selector);
+        }
+    });
+}($);
+
+/*
+* 4选择实例元素
+* */
+~function($){
+    var carrier= $;
+    carrier.fn.extend({
+        pushStack: function( elems ) {
+            //理解Jquery的入栈，将已有的元素合并出一个新的空 $ 对象
+            //之所以是空$对象，因为工厂式构造函数没有传递参数。
+            var ret = $.merge( this.constructor(), elems );
+
+            // Add the old object onto the stack (as a reference)
+            ret.prevObject = this;
+
+            // Return the newly-formed element set
+            return ret;
+        },
+        first: function() {
+            return this.eq( 0 );
+        },
+        last: function() {
+            return this.eq( -1 );
+        },
+        end: function() {
+            return this.prevObject || this.constructor();
+        },
+        eq: function( i ) {
+            var len = this.length,
+                j = +i + ( i < 0 ? len : 0 );
+            this.selectedEls(j);
+            return this.pushStack( j >= 0 && j < len ? [ this[ j ] ] : [] );
+        },
+        find:function(selector){
+            var arr=[];
+            for(var i=0;i<this.length;i++){
+                var res=this[i].querySelectorAll(selector);
+                Array.prototype.push.apply(arr,res);
+            }
+            return this.pushStack(arr);
+        }
+    });
+}($);
+
 
 //类型检查
 $.extend({
