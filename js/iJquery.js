@@ -354,7 +354,7 @@
             return function(){
                 carrier.each(this,function(){
                     var arr=Array.prototype.slice.call(arguments);
-                    //arr.unshift(this);//注意unshift在IE下无效
+                    //arr.unshift(this);//注意unshift在IE低版下会有问题
                     fn.apply(this,[this].concat(arr));//方式1设置元素为方法的第一个参数。
                     //fn.apply(this,arguments);//方式2直接设置元素为方法的执行环境。
                 },Array.prototype.slice.call(arguments));
@@ -402,40 +402,35 @@
 * 通过参数来判断用户行为
 * */
 ~function($){
-    var carrier= $;
-
     $.extend({
         access:function(elems, key, value, fn ){
             /*access的作用，就是通过参数将get,set行为从具体的功能函数中抽离出来。
             参数：参数个数，参数类型来判断着用户将进行何种行为。*/
-            var length = elems.length;
-            var deep = true;
-            var name,len=arguments.length,fn=fn;
-            if(len==4){
-                //为key,value情况
-                //1.当对象作为set操作
-                if( typeof key === "object" ) {
-                    deep = false;
-                    //使用递归，最后按2方式set;
-                    for( name in key ) {
-                        $.access( elems, name, key[name], fn );
-                    }
-                }
-                //2.当字符串key,value作为set操作
-                if( value !== undefined ){
-                    deep = false;
-                    //elems jQuery实例对象
-                    fn.call(elems,null,key,value);
-                }
-            }else if(len==3){
-                //为value情况
-                fn=value;
-                if( key !== undefined ){
-                    deep = false;
-                    fn.call(elems,null,key);
-                }
+            var key=key,value=value,fn=fn;
+            if(toString.call(key)=="[object Function]"){
+               fn=key;key=value=undefined;
+            }else if(toString.call(value)=="[object Function]"){
+                fn=value,value=key;//注意key不设置为undefined,因为value为object时，还是需要进行递归操作。
             }
-            return deep?(length?fn( elems[0], key ):undefined):elems;
+            //为key,value情况
+            //1.当对象作为set操作
+            if( typeof key === "object" ) {
+                //使用递归，最后按2方式set;
+                for(var name in key ) {
+                    $.access( elems, name, key[name], fn );
+                }
+                return elems;
+            }
+            //2.当字符串key,value作为set操作
+            if( value !== undefined ){
+                //elems jQuery实例对象
+                //fn.call(elems,null,key,value);
+                $.each(elems,function(i,el){
+                    fn(el,key,value);
+                });
+                return elems;
+            }
+            return elems.length?fn( elems[0], key ):undefined;
         }
     });
 }($);
@@ -444,8 +439,6 @@
 * 6HTML的DOM操作
 * */
 ~function($){
-    var carrier= $;
-
     //dom样式css操作
     ~function($){
         $.fn.extend({
@@ -460,7 +453,8 @@
                         return $.getCss( elem, name );
                     }
                     // 重置Elment某个css样式属性的值
-                    this.eachForInstance($.setCss)(name,value);
+                    $.setCss(elem,name,value);
+                    //this.eachForInstance($.setCss)(name,value);
                    /* for(var i = 0; i<this.length; i++ ){
                         $.setCss( this[i], name, value );
                     }*/
@@ -493,7 +487,8 @@
                     if(value === undefined) {
                         return $.getText( elem );
                     }
-                    this.eachForInstance($.setText)([value]);
+                    //this.eachForInstance($.setText)([value]);
+                    $.setText(elem,value);
                     /*for(var i = 0; i<this.length; i++ ){
                         $.setText( this[i],value );
                     }*/
@@ -521,7 +516,78 @@
     }($);
 }($);
 
+/*
+* 7回调函数列表管理
+* */
+~function($){
+    //闭包中的方法和属性目的，就是为了不给外界使用，只供内部调用。
+    var spaceExp = /\s+/;//空格
+    function createOptions(options){
+        var object = {};  //"once memory"  ["once" "memory"]
+        $.each(options.split(spaceExp), function( i, value ){
+            object[value] = true;   //value  === stopOnFale
+        });
+        return object;
+    }
+    $.extend({
+        toList:function(arrFns,start,cb){
+            //arrFns：要执行的列表，cb：控制列表是否继续执行，start：执行的起始点。
+            var len=arrFns.length,index=start|| 0,cb=cb||function(){return false};
+            for(;index<len;index++){
+                if(cb(index,arrFns[index])){break;};
+            }
+        },
+        Callbacks:function(options){
+            //闭包管理一次列表状态：
+            var options=typeof options=="string"?createOptions(options):{};//该列表的状态属性
+            //memory记录memory状态，firing是否正在执行列表，start列表循环起点,executed列表执行过一次。
+            var memory,firing,start,executed=false;
+            var list = [];    //该次列表的回调列表
 
+            //控制callback的调用
+            var fire = function( data ){
+                memory = options.memory && data;   //undefined
+                firing = true;
+                $.toList(list,start,function(index,fn){
+                    return fn.apply( data[0], data[1] ) === false && options.stopOnFalse;//stopOnFalse 状态控制
+                });
+                //下次执行列表重置状态
+                start=0,firing = false,executed=true;
+            };
+            //工厂模式
+            var self={
+                add: function(){
+                    var startlen = list.length;   //之前的list length的值
+                    $.each( arguments, function( i, value ){
+                        if( toString.call(value)=="[object Function]" ){
+                            list.push(value);
+                        }
+                    });
+
+                    if( firing ){
+                        start = list.length;
+                    } else if( memory ){   //memory 状态控制
+                        start = startlen;
+                        fire(memory);   //此时memory其实是data
+                    }
+                },
+
+                //上下文对象self    arguments 参数
+                fireWith: function( context, args ){
+                    args = [ context, args ];
+                    //once 状态控制,once情况下,除没执行过以外，执行一次列表。
+                    (!options.once || !executed)&&fire(args);
+                },
+
+                fire: function(){
+                    self.fireWith( this, arguments);
+                    return this;
+                }
+            };
+            return self;
+        }
+    });
+}($);
 //类型检查
 $.extend({
     type:function(){},

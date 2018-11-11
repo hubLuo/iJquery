@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        #box{
+            width: 100px;
+            height: 100px;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+<script type="text/javascript" src="./js/iJquery.js"></script>
+<script type="text/javascript">
+
+    //stopOnFalse   once      memory
+    //var callback = $.Callbacks("memory stopOnFalse");    //工厂函数   创建了一个回调列表
+    //var callback = $.Callbacks("memory once");    //工厂函数   创建了一个回调列表
+    var callback = $.Callbacks("memory once stopOnFalse");    //工厂函数   创建了一个回调列表
+    console.log(callback)
+    //
+    callback.add(function(){     //  1
+        console.log(1)
+        return false;    //
+    });
+
+    callback.add(function(){     //  2
+        console.log(2)
+    });
+
+    callback.fire();    //
+
+    callback.add(function(){     // 2 3
+        console.log(3)
+    });
+
+    //next     node  koa   中间件   中间件
+
+
+</script>
+</body>
+</html>
