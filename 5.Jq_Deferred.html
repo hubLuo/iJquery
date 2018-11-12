@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        #box{
+            width: 100px;
+            height: 100px;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+<div id="box" style="color:#fff">老司机开车了</div>
+<script type="text/javascript" src="./js/iJquery.js"></script>
+<script type="text/javascript">
+    //同步任务列队  从上往下加载     异步任务列队
+    // alert(1)
+    //setTimeout(function(){alert(2)},5000);   //异步操作
+    //alert(3)
+
+    //1.5xxx   XHq对象   1.7  deferred对象
+    /*$.ajax({
+     url:"test.json",
+     type:"get",
+     dataType:"json",
+     success: function(data){  //html  text/pain
+     console.log(data)
+     console.log("成功")
+     },
+     error: function(){
+     console.log("失败")
+     }
+     });
+
+     //deferred对象
+     $.when($.ajax({url:"test.json",type:"get",dataType:"json",}),
+     $.ajax({url:"test1.json",type:"get",dataType:"json",}))
+     .done(function(data){   //集合
+     console.log("成功");
+     })
+     .fail(function(){
+     console.log("失败");
+     })
+     .done(function(){
+     console.log("我还可以调用哦");
+     });
+     */
+
+    var der = $.Deferred();   //der  deferred对象
+
+    var wait = function(der){
+        var test = function(){
+            console.log("老司机开车了");
+            der.resolve();   //成功  失败    fire   ==  list
+        }
+        setTimeout(test,1000);
+
+        return der;
+    }
+
+    //异步操作  普通函数
+    $.when(wait(der))
+            .done(function(){
+                console.log("执行成功");
+            })
+            .fail(function(){
+                console.log("执行失败");
+            })
+            .done(function(){
+                console.log("执行还是成功的");
+            });
+
+
+
+
+    //deferred  异步编程  "回调" 解决方案
+    //一个异步的操作 成功 失败   对应一个回调函数
+
+    //多个异步的操作 成功 失败   对应一个回调函数
+    //一个异步的操作 成功 失败   对应多个回调函数
+    //deferred  对于异步操作的回调解决方案、
+    //
+    /*
+     异步操作  设置了状态
+     resolve  成功     ==  done    回调
+     reject   失败     ==  fail    回调
+     notify   进行中   ==  progess 回调
+
+     callbacks
+     */
+</script>
+</body>
+</html>

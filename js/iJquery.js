@@ -570,12 +570,13 @@
                         start = startlen;
                         fire(memory);   //此时memory其实是data
                     }
+                    return this;
                 },
 
                 //上下文对象self    arguments 参数
                 fireWith: function( context, args ){
                     args = [ context, args ];
-                    //once 状态控制,once情况下,除没执行过以外，执行一次列表。
+                    //once 状态控制：!executed状态能保证执行一次，!options.once状态保证了默认状态下能继续执行
                     (!options.once || !executed)&&fire(args);
                 },
 
@@ -585,6 +586,61 @@
                 }
             };
             return self;
+        }
+    });
+}($);
+
+/*
+* 8异步编程回调解决方案
+* */
+~function($){
+    $.extend({
+        Deferred:function(){
+            //1核心对象: 提供在异步执行前添加回调的方法。
+            var state = "peding";//设置状态信息
+            var promise = {
+                //返回状态信息
+                state: function(){
+                    return state;
+                },
+                promise:function( obj ){
+                    return  typeof obj === "object" ? $.extend( obj, promise ): promise ;
+                }
+            }
+            //2核心对象：提供异步执行结束后执行对应回调列表。
+            var deferred = {};
+
+            //数据源的集合
+            var tuples =[
+                ["resolve" , "done", $.Callbacks("once memory"), "resolved"],
+                ["reject" , "fail", $.Callbacks("once memory"), "rejected"],
+                ["notify" , "progess" , $.Callbacks("once memory")]
+            ];
+            //扩展2个核心对象。
+            $.each( tuples, function( i, tuple ){
+                var list = tuple[2];   //list 回调列表   3
+                //deferred.resolve || reject || notify  ==> fire() 回调列表;
+                deferred[ tuple[0] ] = list.fire;
+                //deferred.resolveWith || rejectWith || notifyWith ==> fireWith();
+                deferred[ tuple[0]+"With" ] = list.fireWith;
+                //promise.done || fail || progess   ==> add()  添加一条callback
+                promise[ tuple[1] ] = list.add;
+                var stateString = tuple[3];
+
+                if( stateString ){
+                    list.add(function(){
+                        state = stateString;
+                    });
+                }
+            });
+            //deferred对象扩展promise对象方法属性，因此拥有了所有方法和属性。
+            promise.promise( deferred );
+            return deferred;
+
+        },
+        when:function(async){
+            //执行deferred.promise()得到一个只有add方法的promise对象；
+            return async.promise();
         }
     });
 }($);

@@ -16,14 +16,17 @@
 <script type="text/javascript">
 
     //stopOnFalse   once      memory
-    //var callback = $.Callbacks("memory stopOnFalse");    //工厂函数   创建了一个回调列表
-    //var callback = $.Callbacks("memory once");    //工厂函数   创建了一个回调列表
-    var callback = $.Callbacks("memory once stopOnFalse");    //工厂函数   创建了一个回调列表
+    //var callback = $.Callbacks("memory stopOnFalse");//混合状态    //工厂函数   创建了一个回调列表
+    //var callback = $.Callbacks("memory once");    //混合状态
+    //var callback = $.Callbacks("memory once stopOnFalse");    //混合状态
+    //var callback = $.Callbacks("once");    //once状态
+    //var callback = $.Callbacks("memory");    //memory 状态
+    var callback = $.Callbacks();    //默认状态
     console.log(callback)
     //
     callback.add(function(){     //  1
         console.log(1)
-        return false;    //
+        return false;    //测试 stopOnFalse
     });
 
     callback.add(function(){     //  2
@@ -32,13 +35,19 @@
 
     callback.fire();    //
 
-    callback.add(function(){     // 2 3
+    callback.add(function(){     // 2 3 测试 memory
         console.log(3)
     });
 
+    callback.fire(); //测试once
     //next     node  koa   中间件   中间件
 
-
+    var a="变量1";
+    var b="变量b";
+</script>
+<script>
+    a="变量2";
+    console.log(a,b);
 </script>
 </body>
 </html>
